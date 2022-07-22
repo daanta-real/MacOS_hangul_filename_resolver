@@ -18,7 +18,8 @@
 
     문제는 익스플로러 관련된 플젝을 진행할 때이다.
     만약 백단을 건드릴 수 없는 상황에서, 폴리필 라이브러리도 import 불가능하고 익스를 지원해야 한다면?
-    외부적으로 해결할 수 있는 방법은 없다. 따라서 라이브러리를 만들어 보기로 했다.
+    외부적으로 해결할 수 있는 방법은 없다. 따라서 한글에 한해 정규화를 할 수 있도록
+    간단한 스니펫을 만들어 보기로 했다.
 
     ※ 본 스니펫은 한글에 한해서만 정규화를 지원한다.
     각종 유럽/라틴 등의 언어를 지원하지 않는 점 명심할 것.
@@ -35,7 +36,6 @@
 
 
 
-// [1] 한영맥 글자가 다 섞인 문자열에서 자모분리된 글자만 찾으려면 어떻게 해야 할까?
 // 1) 유니코드에서 쓰이는 한글 자모 데이터에는 전용과 범용 두 가지가 있다.
 //    전자는 조합해서 글자를 만들기 위해 쓰이고 후자는 그런 것 없이 범용으로 쓰기 위해서 쓰인다.
 //    - 초중종성 전용 글자
@@ -49,13 +49,14 @@
 //    초성+중성+종성 (칡, 닭, 랄, ... ) = 초성전용글자-중성전용글자-종성전용글자 를 조합함
 //    초성+중성      (테, 스, 트, ... ) = 초성전용글자-중성전용글자 를 조합함
 //    초성           (ㅌ, ㄱ,    ... ) = 자음범용글자 를 사용
-// 3) 결론. 자모분리된 글자는 무조건 초성전용글자로 시작한다.
-//    초성전용글자를 찾으면 거기서부터 글자 조립시키면 되고,
-//    나머지는 그냥 그대로 통과시키면 된다.
+// 3) 그러니까, 자모가 분리된 NFD 방식의 한글 글자는 무조건 초성전용글자로 시작한다.
+//    문자열의 모든 원소에 대해서, 초성전용글자를 찾으면 거기서부터 중성 종성을 감지해서 이를 모아 조립시키면 되고,
+//    초성전용글자가 아니라면 그냥 그대로 통과시키면 된다.
 
 
 
-// [3] 한글 포함한 문자열 각개분리용 라이브러리
+// 디버그용. 실제로 쓰실 땐 false로 놓고 쓰세요
+var debug = true;
 
 // 클래스 구조 선언
 var nfd2nfc = {
@@ -87,15 +88,14 @@ nfd2nfc.assembly = function(arr) {
 // 이때, 초/중/종성은 각각 한 개의 글자로 되어 있다고 가정한다. (ex. '와' 글자는, ㅘ O / ㅗㅏ X)
 nfd2nfc.convert = function(strOrg) {
 
-    console.log("변환할 문자열:", strOrg);
-    console.log("길이:", strOrg.length);
+    if(debug) console.log("변환할 문자열:", strOrg, "\n길이:", strOrg.length);
     var result = [];
     
     for(var i = 0, len = strOrg.length; i < len; i++) {
 
         var resultOne = "";
-        console.log("----------------------------------------------------");
-        console.log(i + "번째 검사. 검사할 글자:", strOrg.charAt(i));
+        if(debug) console.log("----------------------------------------------------");
+        if(debug) console.log(i + "번째 검사. 검사할 글자:", strOrg.charAt(i));
 
         // slice할 끝점 설정
         var end = i + (
@@ -107,33 +107,33 @@ nfd2nfc.convert = function(strOrg) {
                     : 0)     // 초성 까지일 경우
                 : 0          // 첫 글자가 초성조차 아닐 경우
         );
-        console.log("끝점: ", end);
+        if(debug) console.log("끝점: ", end);
         if(i < end) {
-            console.log("자를 구간: " + i + " ~ " + end);
+            if(debug) console.log("자를 구간: " + i + " ~ " + end);
             var sliced = strOrg.slice(i, end + 1);
-            console.log("잘라진 배열: ", sliced, " / 길이 " + sliced.length + " / " + typeof sliced);
+            if(debug) console.log("잘라진 배열: ", sliced, " / 길이 " + sliced.length + " / " + typeof sliced);
             resultOne = nfd2nfc.assembly(sliced);
         } else {
-            console.log("잘라진 문자: ", i + " 하나");
+            if(debug) console.log("잘라진 문자: ", i + " 하나");
             resultOne = strOrg.charAt(i);
         }
 
-        console.log("잘라진 최종 결과물:", resultOne);
+        if(debug) console.log("잘라진 최종 결과물:", resultOne);
 
         result.push(resultOne);
-        console.log("현재까지의 결과:", result);
+        if(debug) console.log("현재까지의 결과:", result);
         
         // 다음 검사할 글자 설정.
         // 위 코드에 따르면, 초성까지면 +0, 중성까지면 +1, 종성까지면 +2 되게 되어 있다.
         // 그리고 다음 루프 때에는 기본 +1 되니까, 커서 i는 총 +1 ~ +3칸까지 전진하게 된다.
         i = end;
-        console.log("다음 커서 위치는:", i + 1);
+        if(debug) console.log("다음 커서 위치는:", i + 1);
         
     }
 
-    console.log("결과배열:", result);
+    if(debug) console.log("결과배열:", result);
     result = result.join("");
-    console.log("결과문자열:", result);
+    if(debug) console.log("결과문자열:", result);
     return result;
 
 }
