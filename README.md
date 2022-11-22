@@ -4,13 +4,13 @@
 
 
 
-## 1. Windows Executable file
+## 1. Eexecutable file for Windows
 
 1. Download
 
-    - Download the executable file from Releases on the right side >>>>>
+    - Download the executable file from Releases on the right side.
 
-    - 윈도 실행 버전은 우측 Releases 코너에서 받으세요 >>>>>
+    - 윈도 실행 버전은 우측 Releases 코너에서 받으세요.
 
 2. HOW TO USE
 
